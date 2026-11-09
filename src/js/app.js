@@ -5,8 +5,13 @@ import * as store from './store.js';
 import { runQuiz, askOne, shuffle, starsFor, celebrate, occLabel } from './quiz.js';
 import { generate } from './gen.js';
 import { SIMS as SIMS1 } from '../sims/ch1.js';
+import { SIMS as SIMS2 } from '../sims/ch2.js';
+import { SIMS as SIMS3 } from '../sims/ch3.js';
+import { SIMS as SIMS4 } from '../sims/ch4.js';
+import { SIMS as SIMS5 } from '../sims/ch5.js';
+import { SIMS as SIMS6 } from '../sims/ch6.js';
 
-const SIMS = { ...SIMS1 };
+const SIMS = { ...SIMS1, ...SIMS2, ...SIMS3, ...SIMS4, ...SIMS5, ...SIMS6 };
 const GRADE = 's6-sci';
 const ACCESS_URL = 'https://imadmfas.github.io/allawh/access.js';
 const WA = '9647812346562';
@@ -387,7 +392,7 @@ async function viewLab(n, key) {
   await viewWing(n, 'lab');
   const d = await loadCh(n);
   const keys = [...new Set(d.lessons.flatMap((L) => L.blocks.filter((b) => b.type === 'sim').map((b) => b.key)))];
-  const names = { plates: 'المتسعة ذات الصفيحتين', network: 'ربط المتسعات', energy: 'الطاقة المختزنة', rc: 'الشحن والتفريغ', variable: 'المتسعة المتغيرة', keyboard: 'مفتاح لوحة الحاسوب' };
+  const names = { plates: 'المتسعة ذات الصفيحتين', network: 'ربط المتسعات', energy: 'الطاقة المختزنة', rc: 'الشحن والتفريغ', variable: 'المتسعة المتغيرة', keyboard: 'مفتاح لوحة الحاسوب', lorentz: 'جسيم في مجال مغناطيسي', faraday: 'تجربة فراداي', rod: 'الساق المتحركة', flux: 'الفيض المغناطيسي', eddy: 'التيارات الدوّامة', generator: 'المولّد', selfInd: 'الحث الذاتي', mutual: 'الحث المتبادل', guitar: 'لاقطة القيثارة', phasor: 'الطور في دوائر R و L و C', rlc: 'دائرة RLC والرنين', lc: 'دائرة الاهتزاز LC', emwave: 'الموجة الكهرومغناطيسية', modulation: 'التضمين', young: 'تجربة يونك', diffraction: 'الحيود', polarizer: 'الاستقطاب', thinfilm: 'الأغشية الرقيقة', blackbody: 'الجسم الأسود', photoelectric: 'الظاهرة الكهروضوئية', diode: 'الوصلة الثنائية', rectifier: 'التقويم', hydrogen: 'طيف الهيدروجين', laser: 'الليزر', decay: 'عمر النصف', fission: 'الانشطار', radiation: 'نفاذ الإشعاعات' };
   const path = $('.path'); path.className = 'labv';
   const k0 = key || keys[0];
   path.innerHTML = `<div class="labtabs">${keys.map((k) => `<a href="#/lab/${n}/${k}" class="${k === k0 ? 'on' : ''}">${names[k] || k}</a>`).join('')}</div><div id="labstage"></div>`;
@@ -509,3 +514,5 @@ document.addEventListener('pointerdown', () => sfx.unlock(), { once: true });
 document.addEventListener('click', (e) => { if (e.target.closest('.tabs a, .labtabs a, .qk, .seg button, .filters select, .back, .foot a')) sfx.tap(); });
 try { if (localStorage.getItem('p6-rm')) document.body.classList.add('rm'); } catch (e) {}
 (async () => { await onboarding(false); route(); })();
+// احتساب الزيارة والظهور في عدّاد المتصلين في «اللوح المحاور»
+import(/* @vite-ignore */ 'https://imadmfas.github.io/allawh/stats.js').then((m) => { m.hit('physics6'); m.online('physics6'); }).catch(() => {});

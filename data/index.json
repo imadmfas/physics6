@@ -12,57 +12,57 @@
    "n": 2,
    "title": "الحث الكهرومغناطيسي",
    "titleEn": "Electromagnetic Induction",
-   "ready": false,
-   "lessons": 10
+   "ready": true,
+   "lessons": 19
   },
   {
    "n": 3,
    "title": "التيار المتناوب",
    "titleEn": "Alternating Current",
-   "ready": false,
-   "lessons": 10
+   "ready": true,
+   "lessons": 13
   },
   {
    "n": 4,
    "title": "الموجات الكهرومغناطيسية",
    "titleEn": "Electromagnetic Waves",
-   "ready": false,
+   "ready": true,
    "lessons": 10
   },
   {
    "n": 5,
    "title": "البصريات الفيزيائية",
    "titleEn": "Physical Optics",
-   "ready": false,
-   "lessons": 10
+   "ready": true,
+   "lessons": 8
   },
   {
    "n": 6,
    "title": "الفيزياء الحديثة",
    "titleEn": "Modern Physics",
-   "ready": false,
-   "lessons": 10
+   "ready": true,
+   "lessons": 12
   },
   {
    "n": 7,
    "title": "الكترونيات الحالة الصلبة",
    "titleEn": "Solid State Electronics",
-   "ready": false,
+   "ready": true,
    "lessons": 10
   },
   {
    "n": 8,
    "title": "الأطياف الذرية والليزر",
    "titleEn": "Atomic Spectra and Laser",
-   "ready": false,
-   "lessons": 10
+   "ready": true,
+   "lessons": 15
   },
   {
    "n": 9,
    "title": "الفيزياء النووية",
    "titleEn": "Nuclear Physics",
-   "ready": false,
-   "lessons": 10
+   "ready": true,
+   "lessons": 11
   }
  ]
 }
