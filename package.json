@@ -1,0 +1,19 @@
+{
+  "name": "physics6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/noto-naskh-arabic": "^5.3.0",
+    "@fontsource/tajawal": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "katex": "^0.19.1"
+  },
+  "type": "module"
+}
