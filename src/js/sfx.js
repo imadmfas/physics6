@@ -21,6 +21,16 @@ function tone(f, { t = 0, dur = 0.15, type = 'sine', vol = 0.3, to = null, attac
   g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(vol, s + attack); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
   o.connect(g).connect(master); o.start(s); o.stop(s + dur + 0.05);
 }
+function sweep({ t = 0, dur = 0.28, vol = 0.12, from = 400, to = 2400, q = 1.2 } = {}) {
+  const c = ac(); if (!c) return;
+  const s = c.currentTime + t, n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  src.buffer = b; f.type = 'bandpass'; f.Q.value = q; f.frequency.setValueAtTime(from, s); f.frequency.exponentialRampToValueAtTime(to, s + dur);
+  g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(vol, s + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+  src.connect(f).connect(g).connect(master); src.start(s); src.stop(s + dur + 0.05);
+}
+let lastBlip = 0;
 function noise({ t = 0, dur = 0.2, vol = 0.2, freq = 1200 } = {}) {
   const c = ac(); if (!c) return;
   const s = c.currentTime + t, n = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
@@ -50,4 +60,16 @@ export const sfx = {
   },
   fail() { [392, 349, 311, 262].forEach((f, i) => tone(f, { t: i * 0.16, dur: 0.3, type: 'triangle', vol: 0.12 })); },
   tick() { tone(1500, { dur: 0.03, type: 'square', vol: 0.03 }); },
+  // انتقالات وحركات
+  whoosh(dir = 1) { sweep(dir > 0 ? { from: 300, to: 2600 } : { from: 2600, to: 300 }); },
+  page() { sweep({ dur: 0.22, vol: 0.09, from: 600, to: 3200, q: 0.8 }); tone(880, { t: 0.05, dur: 0.12, type: 'sine', vol: 0.05, to: 1320 }); },
+  swish() { sweep({ dur: 0.18, vol: 0.07, from: 1200, to: 4200, q: 2 }); },
+  blip(i = 0) { const now = performance.now(); if (now - lastBlip < 35) return; lastBlip = now; tone(520 + (i % 8) * 70, { dur: 0.07, type: 'sine', vol: 0.06 }); },
+  pop() { tone(300, { dur: 0.12, type: 'sine', vol: 0.18, to: 900 }); noise({ dur: 0.05, vol: 0.05, freq: 3000 }); },
+  close() { tone(700, { dur: 0.12, type: 'sine', vol: 0.1, to: 250 }); },
+  ding() { tone(1568, { dur: 0.35, type: 'sine', vol: 0.09 }); tone(2093, { t: 0.06, dur: 0.4, type: 'sine', vol: 0.06 }); },
+  rise(p = 0) { tone(400 + p * 700, { dur: 0.12, type: 'triangle', vol: 0.06, to: 520 + p * 800 }); },
+  power() { tone(110, { dur: 0.9, type: 'sawtooth', vol: 0.04, to: 440, attack: 0.2 }); sweep({ dur: 0.9, vol: 0.05, from: 200, to: 3000, q: 4 }); [523, 784, 1046].forEach((f, i) => tone(f, { t: 0.55 + i * 0.08, dur: 0.25, type: 'triangle', vol: 0.06 })); },
+  count() { tone(1200 + Math.random() * 200, { dur: 0.025, type: 'square', vol: 0.025 }); },
+  party() { for (let i = 0; i < 6; i++) noise({ t: i * 0.05, dur: 0.08, vol: 0.06, freq: 2000 + i * 500 }); },
 };

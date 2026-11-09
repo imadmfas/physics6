@@ -58,7 +58,7 @@ a{color:inherit}
 .sp{flex:1}
 .chips{display:flex;gap:6px}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:30px;background:var(--card);border:1px solid var(--line);font-size:15px}
-.chip.fire b{color:#fb923c}.chip.fire.off{filter:grayscale(1);opacity:.6}.chip.el b{color:var(--gold)}
+.chip.snd{cursor:pointer;font-size:16px;padding:4px 8px}.chip.fire b{color:#fb923c}.chip.fire.off{filter:grayscale(1);opacity:.6}.chip.el b{color:var(--gold)}
 .me{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:40px;padding:3px 12px 3px 4px;cursor:pointer}
 .me .who{display:flex;flex-direction:column;line-height:1.2;text-align:right}.me .who small{color:var(--mut);font-size:11px}
 .av{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--b,#dbe4ff);font-size:22px;border:3px solid transparent}

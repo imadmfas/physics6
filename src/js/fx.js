@@ -1,10 +1,12 @@
 // مؤثرات بصرية: قصاصات الاحتفال، النقاط الطائرة، الإشعارات، النوافذ.
 import { esc } from './math.js';
+import { sfx } from './sfx.js';
 
 const reduced = () => document.body.classList.contains('rm');
 
 export function confetti({ n = 120, colors = ['#22d3ee', '#fbbf24', '#34d399', '#a78bfa', '#f472b6', '#fff'] } = {}) {
   if (reduced()) return;
+  sfx.party();
   const cv = document.createElement('canvas'); cv.className = 'fx-canvas'; document.body.appendChild(cv);
   const dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
   cv.width = W * dpr; cv.height = H * dpr; const c = cv.getContext('2d'); c.scale(dpr, dpr);
@@ -32,12 +34,13 @@ export function floatText(text, el, cls = '') {
   const f = document.createElement('div'); f.className = 'floater ' + cls; f.textContent = text;
   const r = el ? el.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
   f.style.left = r.left + r.width / 2 + 'px'; f.style.top = r.top + 'px';
-  document.body.appendChild(f); setTimeout(() => f.remove(), 1300);
+  document.body.appendChild(f); setTimeout(() => f.remove(), 1300); sfx.coin();
 }
 
 let toastBox;
 export function toast(html, { icon = '✨', ms = 3200, cls = '' } = {}) {
   if (!toastBox) { toastBox = document.createElement('div'); toastBox.className = 'toasts'; document.body.appendChild(toastBox); }
+  sfx.ding();
   const t = document.createElement('div'); t.className = 'toast ' + cls; t.innerHTML = `<span class="ti">${icon}</span><div>${html}</div>`;
   toastBox.appendChild(t); requestAnimationFrame(() => t.classList.add('in'));
   setTimeout(() => { t.classList.remove('in'); setTimeout(() => t.remove(), 400); }, ms);
@@ -47,8 +50,8 @@ export function modal(html, { cls = '', closable = true } = {}) {
   return new Promise((resolve) => {
     const bg = document.createElement('div'); bg.className = 'modal-bg';
     bg.innerHTML = `<div class="modal ${cls}">${html}</div>`;
-    document.body.appendChild(bg); requestAnimationFrame(() => bg.classList.add('in'));
-    const close = (v) => { bg.classList.remove('in'); setTimeout(() => bg.remove(), 250); resolve(v); };
+    document.body.appendChild(bg); requestAnimationFrame(() => bg.classList.add('in')); sfx.pop();
+    const close = (v) => { sfx.close(); bg.classList.remove('in'); setTimeout(() => bg.remove(), 250); resolve(v); };
     bg.addEventListener('click', (e) => {
       const b = e.target.closest('[data-v]'); if (b) return close(b.dataset.v);
       if (closable && e.target === bg) close(null);
@@ -57,3 +60,9 @@ export function modal(html, { cls = '', closable = true } = {}) {
 }
 
 export const h = (s) => esc(s);
+
+// يشغّل نقرة خفيفة مع ظهور كل عنصر من مجموعة متتالية الظهور
+export function cascade(els, step = 70, start = 0) {
+  if (reduced()) return;
+  [...els].slice(0, 14).forEach((e, i) => setTimeout(() => sfx.blip(i), start + i * step));
+}

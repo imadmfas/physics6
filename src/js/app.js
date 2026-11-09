@@ -1,6 +1,6 @@
 import { rich, auto, esc, tex } from './math.js';
 import { sfx } from './sfx.js';
-import { confetti, toast, modal, floatText, sparks } from './fx.js';
+import { confetti, toast, modal, floatText, sparks, cascade } from './fx.js';
 import * as store from './store.js';
 import { runQuiz, askOne, shuffle, starsFor, celebrate, occLabel } from './quiz.js';
 import { generate } from './gen.js';
@@ -51,6 +51,7 @@ function hud() {
     <div class="chips">
       <span class="chip fire ${store.streakAlive() ? '' : 'off'}" title="أيام متتالية">🔥 <b id="hStreak">${store.streakAlive()}</b></span>
       <span class="chip el" title="إلكترونات">⚡ <b id="hEl">${store.state.el}</b></span>
+      <button class="chip snd" id="sndBtn" title="الأصوات" aria-label="الأصوات">${sfx.on ? '🔊' : '🔇'}</button>
     </div>
     <button class="me" id="meBtn"><span class="av" style="--b:${av[1]}">${av[0]}</span><span class="who"><b>${esc(p ? p.name : 'باحث جديد')}</b><small>${r.icon} ${esc(r.name)}</small></span></button>
   </header>
@@ -117,6 +118,8 @@ async function viewStation() {
     <h2 class="sec">أجنحة المختبر</h2>
     <section class="wings">${wings}</section>
   </main>${footer()}`;
+  if (!sessionStorage.getItem('p6-power')) { sessionStorage.setItem('p6-power', '1'); setTimeout(() => sfx.power(), 150); }
+  cascade(app.querySelectorAll('.wing'), 60, 250);
   app.querySelectorAll('.wing').forEach((w) => w.addEventListener('click', (e) => {
     if (w.dataset.st === 'locked') { e.preventDefault(); sfx.wrong(); w.classList.add('shake'); setTimeout(() => w.classList.remove('shake'), 450); toast(`يُفتح هذا الجناح بعد اجتياز «تحدّي الجناح ${w.dataset.n - 1}» بدرجة ${PASS_CH}% فأكثر.`, { icon: '🔒' }); }
     else if (w.dataset.st === 'soon') { e.preventDefault(); toast('هذا الجناح قيد البناء، وسيُفتتح قريبًا.', { icon: '🛠️' }); }
@@ -166,6 +169,7 @@ async function viewWing(n, tab = 'path') {
     if (!(await gateLesson(n, i))) return;
     go(`#/l/${n}/${i}`);
   });
+  if (tab === 'path') cascade(app.querySelectorAll('.node'), 70, 100);
   const cur = app.querySelector('.node.current'); cur && setTimeout(() => cur.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
 }
 
@@ -222,12 +226,14 @@ async function viewLesson(n, i) {
     $('#lcount').textContent = `${k + 1} / ${slides.length}`;
     prev.style.visibility = k ? 'visible' : 'hidden'; next.style.display = ''; next.disabled = false; next.textContent = 'التالي';
     stage.className = 'lstage ' + (dir > 0 ? 'in-l' : 'in-r'); void stage.offsetWidth;
+    sfx.page();
     if (sl.kind === 'intro') {
       stage.innerHTML = `<div class="lintro"><div class="lmark">${L.id}</div><h1>${esc(L.title)}</h1><div dir="ltr" class="en">${esc(L.titleEn || '')}</div><div class="lmeta">📖 صفحات الكتاب ${(L.pages || []).join('–')}</div>
         <div class="lplan"><span>📚 ${slides.filter((s) => s.kind === 'cards').length} بطاقات شرح</span>${slides.some((s) => s.kind === 'example') ? `<span>✍️ ${slides.filter((s) => s.kind === 'example').length} أمثلة محلولة</span>` : ''}${slides.some((s) => s.kind === 'sim') ? `<span>🧪 ${slides.filter((s) => s.kind === 'sim').length} تجربة افتراضية</span>` : ''}<span>🎯 اختبار المهمة</span></div></div>`;
       next.textContent = 'لننطلق 🚀';
     } else if (sl.kind === 'cards') {
       stage.innerHTML = sl.blocks.map(blockCard).join('');
+      cascade(stage.querySelectorAll('.card'), 80, 120);
     } else if (sl.kind === 'example') {
       const b = sl.b; let s = 0;
       stage.innerHTML = `<div class="card ex">${b.page ? `<span class="pg">ص ${b.page}</span>` : ''}<div class="cardk">✍️ مثال ${b.num || ''}</div><div class="exq">${rich(b.question)}</div>${b.svg ? `<div class="figsvg">${b.svg}</div>` : ''}<ol class="steps"></ol><div class="exa"></div><button class="btn alt" id="exStep">أظهر خطوة الحل الأولى</button></div>`;
@@ -288,10 +294,16 @@ async function lessonQuiz(n, i) {
     ${r.res.some((x) => !x.ok) ? `<details class="review"><summary>راجع أخطاءك (${r.res.filter((x) => !x.ok).length})</summary>${r.res.filter((x) => !x.ok).map((x) => `<div class="rv"><div>${rich(x.q.q)}</div><div class="rva">${x.q.kind === 'mcq' ? '✓ ' + auto(x.q.options[x.q.correct]) : x.q.kind === 'numeric' ? '✓ ' + auto(x.q.show) : rich(x.q.answer || '') + (x.q.steps ? `<ol class="steps">${x.q.steps.map((s) => `<li>${auto(s)}</li>`).join('')}</ol>` : '')}</div></div>`).join('')}</details>` : ''}
     <div class="row"><button class="btn ghost" id="again">أعد الاختبار</button>${nextL ? `<button class="btn big go" id="nextL">المهمة التالية ←</button>` : `<button class="btn big go" id="toWing">إلى تحدّي الجناح ⚔️</button>`}</div>
   </div></main>`;
+  countUp($('.res-pct'), r.pct);
   celebrate(stars);
   $('#again').onclick = () => lessonQuiz(n, i);
   const nb = $('#nextL'); if (nb) nb.onclick = async () => { if (await gateLesson(n, i + 1)) go(`#/l/${n}/${i + 1}`); };
   const tw = $('#toWing'); if (tw) tw.onclick = () => go('#/ch/' + n);
+}
+
+function countUp(el, to, suffix = '%') {
+  if (!el) return; let v = 0; const steps = 30;
+  const t = setInterval(() => { v = Math.min(to, v + Math.max(1, Math.ceil(to / steps))); el.textContent = v + suffix; sfx.count(); if (v >= to) clearInterval(t); }, 28);
 }
 
 /* ========== تحدّي الجناح ========== */
@@ -309,6 +321,7 @@ async function viewExam(n) {
   const pass = r.pct >= PASS_CH, before = (store.state.chapters[n] || {}).passed;
   store.chapterExam(n, r.pct); store.reward(pass ? 150 + r.ok * 5 : 30 + r.ok * 3, pass ? 40 : 5);
   pass ? (sfx.levelup(), confetti({ n: 260 })) : sfx.fail();
+  setTimeout(() => countUp($('.res-pct'), r.pct), 0);
   app.innerHTML = `<main class="result" style="--c:${CH_COLORS[n - 1]}"><div class="res-card pop ${pass ? 'win' : 'lose'}">
     <div class="bigi">${pass ? '🏆' : '💪'}</div><h1>${pass ? (before ? 'اجتزت التحدّي مجددًا!' : 'فُتح الجناح التالي!') : 'لم تبلغ الدرجة المطلوبة بعد'}</h1>
     <div class="res-pct">${r.pct}%</div><p>${r.ok} من ${r.total} · المطلوب ${PASS_CH}%</p>
@@ -467,8 +480,10 @@ async function viewSettings() {
 
 /* ========== التوجيه ========== */
 function go(h) { if (location.hash === h) route(); else location.hash = h; }
+let routed = false;
 async function route() {
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  if (routed) sfx.whoosh(1); routed = true;
   window.scrollTo(0, 0);
   try {
     if (!p.length) await viewStation();
@@ -486,7 +501,11 @@ async function route() {
   } catch (e) { console.error(e); app.innerHTML = `<main class="err"><h1>حدث خطأ</h1><p>${esc(e.message)}</p><a class="btn" href="#/">المحطة</a></main>`; }
 }
 addEventListener('hashchange', route);
-document.addEventListener('click', (e) => { if (e.target.closest('#meBtn')) onboarding(true).then(route); }, true);
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#meBtn')) onboarding(true).then(route);
+  const sb = e.target.closest('#sndBtn'); if (sb) { sfx.set(!sfx.on); sb.textContent = sfx.on ? '🔊' : '🔇'; if (sfx.on) sfx.ding(); }
+}, true);
 document.addEventListener('pointerdown', () => sfx.unlock(), { once: true });
+document.addEventListener('click', (e) => { if (e.target.closest('.tabs a, .labtabs a, .qk, .seg button, .filters select, .back, .foot a')) sfx.tap(); });
 try { if (localStorage.getItem('p6-rm')) document.body.classList.add('rm'); } catch (e) {}
 (async () => { await onboarding(false); route(); })();

@@ -1,7 +1,7 @@
 // محرّك الأسئلة: اختيار من متعدد، وجواب عددي، وسؤال يُكشف جوابه، ومسألة تُكشف خطواتها.
 import { rich, auto, esc } from './math.js';
 import { sfx } from './sfx.js';
-import { confetti, sparks, floatText } from './fx.js';
+import { confetti, sparks, floatText, cascade } from './fx.js';
 import { answer as record, badge } from './store.js';
 
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -32,6 +32,7 @@ function header(q) {
 export function askOne(box, q, { examMode = false } = {}) {
   return new Promise((resolve) => {
     box.innerHTML = `<div class="qcard enter">${header(q)}<div class="qbody"></div></div><div class="qbar"></div>`;
+    sfx.swish();
     const body = box.querySelector('.qbody'), bar = box.querySelector('.qbar');
     const finish = (ok, extra = {}) => {
       record(q.id, ok, { wizari: q.source === 'wizari' });
@@ -48,6 +49,7 @@ export function askOne(box, q, { examMode = false } = {}) {
       const order = shuffle(q.options.map((o, i) => i));
       body.innerHTML = `<div class="opts">${order.map((i, k) => `<button class="opt" data-i="${i}"><span class="ok">${'أبجد'[k] || k + 1}</span><span>${auto(q.options[i])}</span></button>`).join('')}</div>`;
       bar.innerHTML = `<button class="btn big" data-check disabled>تحقّق</button>`;
+      cascade(body.querySelectorAll('.opt'), 70, 150);
       let pick = -1;
       body.onclick = (e) => {
         const b = e.target.closest('.opt'); if (!b || body.classList.contains('locked')) return;
@@ -106,7 +108,7 @@ export async function runQuiz(root, questions, { title = '', examMode = false, o
   root.querySelector('[data-quit]').onclick = () => { quit = true; stage.dispatchEvent(new Event('quit')); };
   const res = []; let streak = 0, best = 0;
   for (let i = 0; i < questions.length; i++) {
-    pbar.style.width = (i / questions.length) * 100 + '%';
+    pbar.style.width = (i / questions.length) * 100 + '%'; if (i) sfx.rise(i / questions.length);
     const r = await Promise.race([askOne(stage, questions[i], { examMode }), new Promise((ok) => stage.addEventListener('quit', () => ok(null), { once: true }))]);
     if (!r || quit) return null;
     res.push({ q: questions[i], ...r });
