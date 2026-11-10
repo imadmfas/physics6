@@ -54,6 +54,8 @@ for qi, q in enumerate(eq.get('conceptual', [])):
 for qi, q in enumerate(eq.get('problems', [])):
     questions.append({'id': f'c{N}bp{q["num"]}', 'kind': 'reveal', 'source': 'book', 'lesson': BOOK_PROB_LESSON.get(q['num']), 'q': q['q'], 'steps': q.get('solution'), 'final': q.get('answer'), 'figure': figsvg(f'Eproblems{qi}', q), 'kindLabel': 'مسألة'})
 
+DOUBT = set(json.load(open(f'{W}/doubtful.json'))) if os.path.exists(f'{W}/doubtful.json') else set()
+waz = [q for q in waz if q['id'] not in DOUBT]  # الأسئلة المشكوك في نصها المطبوع محذوفة
 for q in waz:
     base = {'id': q['id'], 'source': 'wizari', 'lesson': q.get('lesson'), 'q': q['q'], 'occ': q.get('occurrences', []), 'kindLabel': q.get('kind'), 'figure': figs.get(q['id'])}
     if q.get('kind') == 'اختر' and q.get('options') and q.get('correct') is not None:

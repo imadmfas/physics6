@@ -31,7 +31,8 @@ function globalLessonNo(n, idx) { let k = 0; for (const c of INDEX.chapters) { i
 /* ========== الاشتراك ========== */
 let accessMod = null;
 async function access() { if (!accessMod) { try { accessMod = await import(/* @vite-ignore */ ACCESS_URL); } catch (e) { accessMod = { gate: async () => true, hasAccess: async () => true, FREE: 5, failed: true }; } } return accessMod; }
-async function gateLesson(n, idx) { const a = await access(); return a.gate({ grade: GRADE, lesson: globalLessonNo(n, idx) }); }
+// الدرس الأول من كل فصل مجاني، فعدد الدروس المجانية يساوي عدد الفصول
+async function gateLesson(n, idx) { if (idx === 0) return true; const a = await access(); return a.gate({ grade: GRADE, lesson: 999 }); }
 
 /* ========== أحداث المكافآت ========== */
 store.on((ev) => {
@@ -89,12 +90,7 @@ async function onboarding(force) {
 const CH_ICONS = ['🔋', '🧲', '〰️', '📡', '🌈', '⚛️', '💡', '🔦', '☢️'];
 const CH_COLORS = ['#22d3ee', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#fb923c', '#e879f9', '#f87171'];
 
-function chapterState(c) {
-  if (!c.ready) return 'soon';
-  if (c.n === 1) return 'open';
-  const prev = store.state.chapters[c.n - 1];
-  return prev && prev.passed ? 'open' : 'locked';
-}
+function chapterState(c) { return c.ready ? 'open' : 'soon'; }
 
 async function viewStation() {
   await loadIndex();
@@ -112,7 +108,7 @@ async function viewStation() {
   const earned = S.badges.length, all = Object.keys(store.BADGES).length;
   app.innerHTML = `${hud()}<main class="station">
     <section class="hero">
-      <div class="hero-t"><div class="hello">${p ? `مرحبًا ${esc(p.name)} 👋` : 'مرحبًا'}</div><h1>محطة مختبرات الفيزياء</h1><p>تسعة أجنحة، في كل جناح مهام وتجارب وأسئلة وزارية. اجتز «تحدّي الجناح» بدرجة ${PASS_CH}% ليُفتح لك الجناح التالي.</p></div>
+      <div class="hero-t"><div class="hello">${p ? `مرحبًا ${esc(p.name)} 👋` : 'مرحبًا'}</div><h1>محطة مختبرات الفيزياء</h1><p>تسعة أجنحة مفتوحة كلها، في كل جناح مهام وتجارب وأسئلة وزارية. الدرس الأول من كل جناح مجاني، واجتز «تحدّي الجناح» بدرجة ${PASS_CH}% لتنال وسامه.</p></div>
       <div class="hero-orb"><div class="orb"><i></i><i></i><i></i><b>⚛</b></div></div>
     </section>
     <section class="quick">
@@ -146,7 +142,7 @@ async function viewWing(n, tab = 'path') {
   d.lessons.forEach((L, i) => { if (i === 0 || (S.lessons[d.lessons[i - 1].id] || {}).done) unlockedUpTo = i; });
   const allDone = d.lessons.every((L) => (S.lessons[L.id] || {}).done);
   const path = d.lessons.map((L, i) => {
-    const r = S.lessons[L.id] || {}, open = i <= unlockedUpTo, g = globalLessonNo(n, i), locked$ = !paid && g > (a.FREE || 5);
+    const r = S.lessons[L.id] || {}, open = true, locked$ = !paid && i > 0;
     const stars = [0, 1, 2].map((k) => `<i class="${k < (r.stars || 0) ? 'on' : ''}">★</i>`).join('');
     return `<div class="node ${r.done ? 'done' : open ? 'open' : 'locked'} ${i === unlockedUpTo && !r.done ? 'current' : ''}" style="--x:${[0, 60, 90, 60, 0, -60, -90, -60][i % 8]}px;--d:${i * 70}ms">
       <button class="nbtn" data-i="${i}" aria-label="${esc(L.title)}">${r.done ? '✓' : !open ? '🔒' : locked$ ? '💎' : L.icon || (i + 1)}</button>
@@ -160,16 +156,14 @@ async function viewWing(n, tab = 'path') {
     <section class="whead"><a class="back" href="#/">→ المحطة</a><div class="wtitle"><span class="wic big">${CH_ICONS[n - 1]}</span><div><small>الجناح ${n}</small><h1>${esc(d.title)}</h1><span dir="ltr" class="en">${esc(d.titleEn)}</span></div></div>
       <div class="tabs"><a href="#/ch/${n}" class="${tab === 'path' ? 'on' : ''}">🗺️ المهام</a><a href="#/bank/${n}" class="${tab === 'bank' ? 'on' : ''}">🏛️ الوزاريات (${wizCount})</a><a href="#/cards/${n}" class="${tab === 'cards' ? 'on' : ''}">🃏 بطاقات المراجعة</a><a href="#/lab/${n}" class="${tab === 'lab' ? 'on' : ''}">🧪 التجارب</a></div></section>
     <section class="path">${path}
-      <div class="node boss ${allDone ? 'open' : 'locked'} ${exam.passed ? 'done' : ''}" style="--x:0px;--d:${d.lessons.length * 70}ms"><button class="nbtn" data-boss="1">${exam.passed ? '🏆' : allDone ? '⚔️' : '🔒'}</button><div class="nlab"><b>تحدّي الجناح</b><small>${exam.best ? `أفضل درجة ${exam.best}%` : `يفتح الجناح التالي عند ${PASS_CH}%`}</small></div></div>
+      <div class="node boss open ${exam.passed ? 'done' : ''}" style="--x:0px;--d:${d.lessons.length * 70}ms"><button class="nbtn" data-boss="1">${exam.passed ? '🏆' : '⚔️'}</button><div class="nlab"><b>تحدّي الجناح</b><small>${exam.best ? `أفضل درجة ${exam.best}%` : `اجتزه بدرجة ${PASS_CH}% لتنال وسام الجناح`}</small></div></div>
     </section></main>${footer()}`;
   app.querySelectorAll('.nbtn').forEach((b) => b.onclick = async () => {
     if (b.dataset.boss) {
-      if (!allDone) { sfx.wrong(); return toast('أنهِ مهام الجناح كلها أولًا لتفتح التحدّي.', { icon: '🔒' }); }
       if (!(await (await access()).gate({ grade: GRADE, lesson: 999 }))) return;
       return go(`#/exam/${n}`);
     }
     const i = +b.dataset.i;
-    if (i > unlockedUpTo) { sfx.wrong(); b.parentElement.classList.add('shake'); setTimeout(() => b.parentElement.classList.remove('shake'), 450); return toast('أنهِ المهمة السابقة أولًا.', { icon: '🔒' }); }
     sfx.tap();
     if (!(await gateLesson(n, i))) return;
     go(`#/l/${n}/${i}`);
@@ -317,7 +311,7 @@ async function viewExam(n) {
   const mcq = shuffle(d.questions.filter((q) => q.kind === 'mcq'));
   const gens = shuffle(d.lessons.flatMap((L) => L.gens || [])).slice(0, 8).map(generate).filter(Boolean);
   const qs = shuffle([...mcq.slice(0, 12), ...gens]).slice(0, 18);
-  app.innerHTML = `<main class="result" style="--c:${CH_COLORS[n - 1]}"><div class="res-card pop"><div class="bigi">⚔️</div><h1>تحدّي جناح ${esc(d.title)}</h1><p>${qs.length} سؤالًا تُصحّح آليًا، من الكتاب والوزاريات ومسائل جديدة. تحتاج ${PASS_CH}% لتفتح الجناح التالي. لا تظهر الشروح أثناء التحدّي.</p><button class="btn big go" id="go">ابدأ التحدّي</button><a class="btn ghost" href="#/ch/${n}">ليس الآن</a></div></main>`;
+  app.innerHTML = `<main class="result" style="--c:${CH_COLORS[n - 1]}"><div class="res-card pop"><div class="bigi">⚔️</div><h1>تحدّي جناح ${esc(d.title)}</h1><p>${qs.length} سؤالًا تُصحّح آليًا، من الكتاب والوزاريات ومسائل جديدة. تحتاج ${PASS_CH}% لتنال وسام الجناح. لا تظهر الشروح في أثناء التحدّي.</p><button class="btn big go" id="go">ابدأ التحدّي</button><a class="btn ghost" href="#/ch/${n}">ليس الآن</a></div></main>`;
   await new Promise((r) => { $('#go').onclick = r; });
   sfx.unlock2();
   app.innerHTML = `<main class="quizv exam" style="--c:${CH_COLORS[n - 1]}"></main>`;
@@ -328,7 +322,7 @@ async function viewExam(n) {
   pass ? (sfx.levelup(), confetti({ n: 260 })) : sfx.fail();
   setTimeout(() => countUp($('.res-pct'), r.pct), 0);
   app.innerHTML = `<main class="result" style="--c:${CH_COLORS[n - 1]}"><div class="res-card pop ${pass ? 'win' : 'lose'}">
-    <div class="bigi">${pass ? '🏆' : '💪'}</div><h1>${pass ? (before ? 'اجتزت التحدّي مجددًا!' : 'فُتح الجناح التالي!') : 'لم تبلغ الدرجة المطلوبة بعد'}</h1>
+    <div class="bigi">${pass ? '🏆' : '💪'}</div><h1>${pass ? (before ? 'اجتزت التحدّي مجددًا!' : 'نلت وسام الجناح!') : 'لم تبلغ الدرجة المطلوبة بعد'}</h1>
     <div class="res-pct">${r.pct}%</div><p>${r.ok} من ${r.total} · المطلوب ${PASS_CH}%</p>
     ${pass ? '' : '<p>راجع المهام التي حصلت فيها على نجوم أقل، ثم جرّب التحدّي مرة أخرى بأسئلة جديدة.</p>'}
     ${r.res.some((x) => !x.ok) ? `<details class="review"><summary>راجع أخطاءك (${r.res.filter((x) => !x.ok).length})</summary>${r.res.filter((x) => !x.ok).map((x) => `<div class="rv"><div>${rich(x.q.q)}</div><div class="rva">✓ ${x.q.kind === 'mcq' ? auto(x.q.options[x.q.correct]) : auto(x.q.show)}${x.q.why ? `<div class="why">${rich(x.q.why)}</div>` : ''}${x.q.steps ? `<ol class="steps">${x.q.steps.map((s) => `<li>${auto(s)}</li>`).join('')}</ol>` : ''}</div></div>`).join('')}</details>` : ''}
@@ -475,7 +469,7 @@ async function viewSettings() {
     <div class="set"><b>الأصوات</b><button class="btn" id="snd">${sfx.on ? '🔊 مفعّلة' : '🔇 مطفأة'}</button></div>
     <div class="set"><b>تقليل الحركة</b><button class="btn" id="rm">${document.body.classList.contains('rm') ? 'مفعّل' : 'غير مفعّل'}</button></div>
     <div class="set"><b>ملفي (الاسم والصورة)</b><button class="btn" id="prof">تعديل</button></div>
-    <div class="set"><b>الاشتراك</b><span>${paid ? '✓ كتب السادس العلمي مفتوحة على هذا الجهاز' : 'الدروس الخمسة الأولى مجانية'}</span><a class="btn" href="https://imadmfas.github.io/allawh/#/grade/s6/sci">${paid ? 'إدارة / تسجيل الخروج' : 'عندي كلمة سر'}</a></div>
+    <div class="set"><b>الاشتراك</b><span>${paid ? '✓ كتب السادس العلمي مفتوحة على هذا الجهاز' : 'الدرس الأول من كل فصل مجاني'}</span><a class="btn" href="https://imadmfas.github.io/allawh/#/grade/s6/sci">${paid ? 'إدارة / تسجيل الخروج' : 'عندي كلمة سر'}</a></div>
     <div class="set danger"><b>مسح تقدّمي في هذا الكتاب</b><button class="btn warn" id="wipe">مسح</button></div></main>${footer()}`;
   $('#snd').onclick = () => { sfx.set(!sfx.on); viewSettings(); };
   $('#rm').onclick = () => { const v = !document.body.classList.contains('rm'); document.body.classList.toggle('rm', v); try { localStorage.setItem('p6-rm', v ? '1' : ''); } catch (e) {} viewSettings(); };
