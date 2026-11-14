@@ -12,7 +12,7 @@ import { SIMS as SIMS5 } from '../sims/ch5.js';
 import { SIMS as SIMS6 } from '../sims/ch6.js';
 
 const SIMS = { ...SIMS1, ...SIMS2, ...SIMS3, ...SIMS4, ...SIMS5, ...SIMS6 };
-const GRADE = 's6-sci';
+const GRADE = 's6-sci', BOOK = 'physics6';
 const ACCESS_URL = 'https://imadmfas.github.io/allawh/access.js';
 const WA = '9647812346562';
 const PASS_CH = 80;
@@ -23,8 +23,19 @@ let INDEX = null; const CH = {};
 /* ========== تحميل البيانات ========== */
 async function loadIndex() { if (!INDEX) INDEX = await (await fetch('data/index.json')).json(); return INDEX; }
 async function loadCh(n) {
-  if (!CH[n]) { const d = await (await fetch(`data/ch${n}.json`)).json(); d.qById = Object.fromEntries(d.questions.map((q) => [q.id, q])); CH[n] = d; }
+  if (!CH[n]) { const d = await (await fetch(`data/ch${n}.json`)).json(); if (d.sealed) await unseal(d); d.qById = Object.fromEntries(d.questions.map((q) => [q.id, q])); CH[n] = d; }
   return CH[n];
+}
+// الدروس المختومة: يطلب مفاتيحها من الخادم ويفكّها في المتصفح؛ ما لا يُفك يبقى مقفلًا
+async function unseal(d) {
+  if (!d.lessons.some((L) => L.enc)) return;
+  const a = await access(); if (!a.keysFor || !a.openSealed) return;
+  let keys = {}; try { keys = await a.keysFor(BOOK); } catch (e) {}
+  for (const L of d.lessons) {
+    if (!L.enc || !keys[L.id]) continue;
+    const o = await a.openSealed(L.enc, keys[L.id]);
+    if (o) { L.blocks = o.blocks || []; d.questions.push(...(o.questions || [])); delete L.enc; }
+  }
 }
 function globalLessonNo(n, idx) { let k = 0; for (const c of INDEX.chapters) { if (c.n === n) return k + idx + 1; k += c.lessons; } return 999; }
 
@@ -32,7 +43,17 @@ function globalLessonNo(n, idx) { let k = 0; for (const c of INDEX.chapters) { i
 let accessMod = null;
 async function access() { if (!accessMod) { try { accessMod = await import(/* @vite-ignore */ ACCESS_URL); } catch (e) { const loc = () => { try { const k = JSON.parse(localStorage.getItem('allawh-keys') || '{}')[GRADE]; return !!k && Date.now() - (k.ok_at || 0) < 7 * 864e5; } catch (_) { return false; } }; accessMod = { gate: async ({ lesson }) => lesson <= 1 || loc() || (toast('تعذّر الاتصال بخدمة الاشتراك. تأكد من الإنترنت ثم أعد المحاولة.', { icon: '📶' }), false), hasAccess: async () => loc(), FREE: 1, failed: true }; accessMod.failed && setTimeout(() => { accessMod = null; }, 30000); } } return accessMod; }
 // الدرس الأول من كل فصل مجاني، فعدد الدروس المجانية يساوي عدد الفصول
-async function gateLesson(n, idx) { if (idx === 0) return true; const a = await access(); return a.gate({ grade: GRADE, lesson: 999 }); }
+async function gateLesson(n, idx) {
+  if (idx === 0) return true;
+  const d = await loadCh(n), L = d.lessons[idx];
+  if (!L || !L.enc) return true; // مفكوك أو غير مختوم
+  const a = await access();
+  if (!(await a.gate({ grade: GRADE, lesson: 999, book: BOOK, chapter: n, lessonId: L.id }))) return false;
+  if (a.keysFor) { try { await a.keysFor(BOOK, { force: true }); } catch (e) {} }
+  delete CH[n]; const d2 = await loadCh(n);
+  if (d2.lessons[idx].enc) { toast('كلمة السر المفعّلة لا تشمل هذا الدرس، أو تعذّر الاتصال. اطلب الدرس أو الفصل من النافذة.', { icon: '🔒', ms: 5000 }); return false; }
+  return true;
+}
 
 /* ========== أحداث المكافآت ========== */
 store.on((ev) => {
@@ -142,7 +163,7 @@ async function viewWing(n, tab = 'path') {
   d.lessons.forEach((L, i) => { if (i === 0 || (S.lessons[d.lessons[i - 1].id] || {}).done) unlockedUpTo = i; });
   const allDone = d.lessons.every((L) => (S.lessons[L.id] || {}).done);
   const path = d.lessons.map((L, i) => {
-    const r = S.lessons[L.id] || {}, open = true, locked$ = !paid && i > 0;
+    const r = S.lessons[L.id] || {}, open = true, locked$ = !!L.enc;
     const stars = [0, 1, 2].map((k) => `<i class="${k < (r.stars || 0) ? 'on' : ''}">★</i>`).join('');
     return `<div class="node ${r.done ? 'done' : open ? 'open' : 'locked'} ${i === unlockedUpTo && !r.done ? 'current' : ''}" style="--x:${[0, 60, 90, 60, 0, -60, -90, -60][i % 8]}px;--d:${i * 70}ms">
       <button class="nbtn" data-i="${i}" aria-label="${esc(L.title)}">${r.done ? '✓' : !open ? '🔒' : locked$ ? '💎' : L.icon || (i + 1)}</button>
