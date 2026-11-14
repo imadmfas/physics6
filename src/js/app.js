@@ -30,7 +30,7 @@ function globalLessonNo(n, idx) { let k = 0; for (const c of INDEX.chapters) { i
 
 /* ========== الاشتراك ========== */
 let accessMod = null;
-async function access() { if (!accessMod) { try { accessMod = await import(/* @vite-ignore */ ACCESS_URL); } catch (e) { accessMod = { gate: async () => true, hasAccess: async () => true, FREE: 5, failed: true }; } } return accessMod; }
+async function access() { if (!accessMod) { try { accessMod = await import(/* @vite-ignore */ ACCESS_URL); } catch (e) { const loc = () => { try { const k = JSON.parse(localStorage.getItem('allawh-keys') || '{}')[GRADE]; return !!k && Date.now() - (k.ok_at || 0) < 7 * 864e5; } catch (_) { return false; } }; accessMod = { gate: async ({ lesson }) => lesson <= 1 || loc() || (toast('تعذّر الاتصال بخدمة الاشتراك. تأكد من الإنترنت ثم أعد المحاولة.', { icon: '📶' }), false), hasAccess: async () => loc(), FREE: 1, failed: true }; accessMod.failed && setTimeout(() => { accessMod = null; }, 30000); } } return accessMod; }
 // الدرس الأول من كل فصل مجاني، فعدد الدروس المجانية يساوي عدد الفصول
 async function gateLesson(n, idx) { if (idx === 0) return true; const a = await access(); return a.gate({ grade: GRADE, lesson: 999 }); }
 
