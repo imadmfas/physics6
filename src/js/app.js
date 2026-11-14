@@ -146,7 +146,7 @@ async function viewWing(n, tab = 'path') {
     const stars = [0, 1, 2].map((k) => `<i class="${k < (r.stars || 0) ? 'on' : ''}">★</i>`).join('');
     return `<div class="node ${r.done ? 'done' : open ? 'open' : 'locked'} ${i === unlockedUpTo && !r.done ? 'current' : ''}" style="--x:${[0, 60, 90, 60, 0, -60, -90, -60][i % 8]}px;--d:${i * 70}ms">
       <button class="nbtn" data-i="${i}" aria-label="${esc(L.title)}">${r.done ? '✓' : !open ? '🔒' : locked$ ? '💎' : L.icon || (i + 1)}</button>
-      <div class="nlab"><b>${L.id} ${esc(L.title)}</b><span class="stars">${stars}</span>${locked$ && open ? '<small class="pro">للمشتركين</small>' : ''}</div>
+      <div class="nlab"><b>${L.id} ${esc(L.title)}</b><span class="stars">${stars}</span>${locked$ && open ? '<small class="pro">للمشتركين</small>' : ''}${i === 0 ? '<small class="freeb">الموضوع الأول مجاني بالكامل</small>' : ''}</div>
       ${i === unlockedUpTo && !r.done ? '<span class="startbubble">ابدأ هنا</span>' : ''}
     </div>`;
   }).join('');
@@ -355,7 +355,8 @@ async function viewBank(n) {
   $('#drill').onclick = () => { const L = shuffle(list()).slice(0, 10); if (L.length) drill(L, n); };
 }
 async function drill(qs, n) {
-  if (!(await (await access()).gate({ grade: GRADE, lesson: 999 }))) return;
+  const d0 = await loadCh(n), free = d0.lessons[0] && qs.every((q) => q.lesson === d0.lessons[0].id); // أسئلة الموضوع الأول مجانية
+  if (!free && !(await (await access()).gate({ grade: GRADE, lesson: 999 }))) return;
   app.innerHTML = `<main class="quizv" style="--c:${CH_COLORS[n - 1]}"></main>`;
   const r = await runQuiz($('.quizv'), qs);
   if (r) { store.reward(5 + r.ok * 6, r.ok); r.ok && confetti({ n: 60 + r.ok * 10 }); toast(`أجبت ${r.ok} من ${r.total} صحيحًا. +${5 + r.ok * 6} XP`, { icon: '🏛️' }); }
@@ -431,7 +432,7 @@ async function viewMock() {
   const T = 3 * 3600; let left = T, timer;
   app.innerHTML = `<main class="mock"><div class="mock-head"><div><div class="k">جمهورية العراق — وزارة التربية · اللجنة الدائمة للامتحانات العامة</div><h1>امتحان تجريبي: الفيزياء — السادس العلمي</h1><div class="k">ملاحظة: أجب عن خمسة أسئلة فقط، ولكل سؤال 20 درجة.</div></div><div class="timer" id="tm">3:00:00</div></div>
     <ol class="paper">${paper.map((parts, i) => `<li class="pq"><div class="pqh">س${i + 1}</div>${parts.map((q, j) => `<div class="part"><b>${'ABC'[j]})</b> ${rich(q.q)}${q.figure ? `<div class="qfig">${q.figure}</div>` : ''}${q.kind === 'mcq' ? `<ol class="mopts">${q.options.map((o) => `<li>${auto(o)}</li>`).join('')}</ol>` : ''}<div class="tag">${esc(occLabel(q.occ))}</div></div>`).join('')}</li>`).join('')}</ol>
-    <div class="mock-foot"><p>حلّ الورقة في دفترك كما في القاعة الامتحانية، ثم اضغط «أنهيت» لترى الأجوبة النموذجية وتصحّح لنفسك.</p><button class="btn big go" id="fin">أنهيت، أرني الأجوبة</button></div></main>`;
+    <div class="mock-foot"><p>حلّ الورقة في دفترك كما في القاعة الامتحانية، ثم اضغط «أنهيت» لترى الحلول المقترحة وتصحّح لنفسك.</p><button class="btn big go" id="fin">أنهيت، أرني الأجوبة</button></div></main>`;
   const tm = $('#tm');
   timer = setInterval(() => { left--; const h = Math.floor(left / 3600), m = Math.floor(left % 3600 / 60), s = left % 60; tm.textContent = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; if (left <= 600) tm.classList.add('warn'); if (left <= 0) { clearInterval(timer); $('#fin').click(); } }, 1000);
   addEventListener('hashchange', () => clearInterval(timer), { once: true });

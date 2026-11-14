@@ -1,10 +1,11 @@
+const RM = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
 // مؤثرات بصرية: قصاصات الاحتفال، النقاط الطائرة، الإشعارات، النوافذ.
 import { esc } from './math.js';
 import { sfx } from './sfx.js';
 
 const reduced = () => document.body.classList.contains('rm');
 
-export function confetti({ n = 120, colors = ['#22d3ee', '#fbbf24', '#34d399', '#a78bfa', '#f472b6', '#fff'] } = {}) {
+export function confetti({ n = 120, colors = ['#22d3ee', '#fbbf24', '#34d399', '#a78bfa', '#f472b6', '#fff'] } = {}) { if (RM()) return;
   if (reduced()) return;
   sfx.party();
   const cv = document.createElement('canvas'); cv.className = 'fx-canvas'; document.body.appendChild(cv);
@@ -19,7 +20,7 @@ export function confetti({ n = 120, colors = ['#22d3ee', '#fbbf24', '#34d399', '
   })();
 }
 
-export function sparks(el, color = '#22d3ee') {
+export function sparks(el, color = '#22d3ee') { if (RM()) return;
   if (reduced() || !el) return;
   const r = el.getBoundingClientRect();
   for (let i = 0; i < 14; i++) {
@@ -30,7 +31,7 @@ export function sparks(el, color = '#22d3ee') {
   }
 }
 
-export function floatText(text, el, cls = '') {
+export function floatText(text, el, cls = '') { if (RM()) return;
   const f = document.createElement('div'); f.className = 'floater ' + cls; f.textContent = text;
   const r = el ? el.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
   f.style.left = r.left + r.width / 2 + 'px'; f.style.top = r.top + 'px';
